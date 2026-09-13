@@ -168,6 +168,8 @@
       ]
     };
 
+    let saveTimeout = null;
+
     async function loadData() {
       setStatus("Syncing with Drive...");
       try {
@@ -197,6 +199,13 @@
         try { gameState = JSON.parse(local); } catch(e){}
       }
       setStatus(msg);
+    }
+
+    function debouncedSave() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        saveToDrive();
+      }, 700);
     }
 
     async function saveToDrive() {
@@ -237,20 +246,20 @@
       document.getElementById('g-res').value = gi.result || "W";
       document.getElementById('g-score').value = gi.score || "";
 
-      document.getElementById('g-pts').value = st.pts || "";
-      document.getElementById('g-reb').value = st.reb || "";
-      document.getElementById('g-ast').value = st.ast || "";
-      document.getElementById('g-stls').value = st.stls || "";
-      document.getElementById('g-fto').value = st.fto || "";
-      document.getElementById('g-fouls').value = st.fouls || "";
-      document.getElementById('g-drnfls').value = st.drnFls || "";
-      document.getElementById('g-ts').value = st.trueShots || "";
-      document.getElementById('g-2pm').value = st.twoPm || "";
-      document.getElementById('g-2pa').value = st.twoPa || "";
-      document.getElementById('g-3pm').value = st.threePm || "";
-      document.getElementById('g-3pa').value = st.threePa || "";
-      document.getElementById('g-ftm').value = st.ftm || "";
-      document.getElementById('g-fta').value = st.fta || "";
+      document.getElementById('g-pts').value = st.pts !== undefined && st.pts !== 0 ? st.pts : (st.pts === 0 ? 0 : "");
+      document.getElementById('g-reb').value = st.reb !== undefined && st.reb !== 0 ? st.reb : (st.reb === 0 ? 0 : "");
+      document.getElementById('g-ast').value = st.ast !== undefined && st.ast !== 0 ? st.ast : (st.ast === 0 ? 0 : "");
+      document.getElementById('g-stls').value = st.stls !== undefined && st.stls !== 0 ? st.stls : (st.stls === 0 ? 0 : "");
+      document.getElementById('g-fto').value = st.fto !== undefined && st.fto !== 0 ? st.fto : (st.fto === 0 ? 0 : "");
+      document.getElementById('g-fouls').value = st.fouls !== undefined && st.fouls !== 0 ? st.fouls : (st.fouls === 0 ? 0 : "");
+      document.getElementById('g-drnfls').value = st.drnFls !== undefined && st.drnFls !== 0 ? st.drnFls : (st.drnFls === 0 ? 0 : "");
+      document.getElementById('g-ts').value = st.trueShots !== undefined && st.trueShots !== 0 ? st.trueShots : (st.trueShots === 0 ? 0 : "");
+      document.getElementById('g-2pm').value = st.twoPm !== undefined && st.twoPm !== 0 ? st.twoPm : (st.twoPm === 0 ? 0 : "");
+      document.getElementById('g-2pa').value = st.twoPa !== undefined && st.twoPa !== 0 ? st.twoPa : (st.twoPa === 0 ? 0 : "");
+      document.getElementById('g-3pm').value = st.threePm !== undefined && st.threePm !== 0 ? st.threePm : (st.threePm === 0 ? 0 : "");
+      document.getElementById('g-3pa').value = st.threePa !== undefined && st.threePa !== 0 ? st.threePa : (st.threePa === 0 ? 0 : "");
+      document.getElementById('g-ftm').value = st.ftm !== undefined && st.ftm !== 0 ? st.ftm : (st.ftm === 0 ? 0 : "");
+      document.getElementById('g-fta').value = st.fta !== undefined && st.fta !== 0 ? st.fta : (st.fta === 0 ? 0 : "");
 
       renderRotations();
     }
@@ -291,32 +300,61 @@
         const shiftPm = (Number(r.difOut) || 0) - (Number(r.difIn) || 0);
 
         const tr = document.createElement('tr');
+        tr.id = `rot-row-${idx}`;
         tr.innerHTML = `
-          <td><input type="number" step="1" value="${r.minIn !== undefined ? r.minIn : ''}" oninput="updateRotation(${idx}, 'minIn', this.value)" /></td>
-          <td><input type="number" step="1" value="${r.secIn !== undefined ? r.secIn : ''}" oninput="updateRotation(${idx}, 'secIn', this.value)" /></td>
-          <td><input type="number" step="1" value="${r.difIn !== undefined ? r.difIn : ''}" oninput="updateRotation(${idx}, 'difIn', this.value)" /></td>
-          <td><input type="number" step="1" value="${r.minOut !== undefined ? r.minOut : ''}" oninput="updateRotation(${idx}, 'minOut', this.value)" /></td>
-          <td><input type="number" step="1" value="${r.secOut !== undefined ? r.secOut : ''}" oninput="updateRotation(${idx}, 'secOut', this.value)" /></td>
-          <td><input type="number" step="1" value="${r.difOut !== undefined ? r.difOut : ''}" oninput="updateRotation(${idx}, 'difOut', this.value)" /></td>
-          <td style="font-weight:700;">${shiftMin}</td>
-          <td style="font-weight:700; color:${shiftPm >= 0 ? 'var(--green)' : 'var(--red)'};">${shiftPm > 0 ? '+' : ''}${shiftPm}</td>
+          <td><input type="number" step="any" value="${r.minIn !== undefined ? r.minIn : ''}" oninput="updateRotationField(${idx}, 'minIn', this.value)" /></td>
+          <td><input type="number" step="any" value="${r.secIn !== undefined ? r.secIn : ''}" oninput="updateRotationField(${idx}, 'secIn', this.value)" /></td>
+          <td><input type="number" step="any" value="${r.difIn !== undefined ? r.difIn : ''}" oninput="updateRotationField(${idx}, 'difIn', this.value)" /></td>
+          <td><input type="number" step="any" value="${r.minOut !== undefined ? r.minOut : ''}" oninput="updateRotationField(${idx}, 'minOut', this.value)" /></td>
+          <td><input type="number" step="any" value="${r.secOut !== undefined ? r.secOut : ''}" oninput="updateRotationField(${idx}, 'secOut', this.value)" /></td>
+          <td><input type="number" step="any" value="${r.difOut !== undefined ? r.difOut : ''}" oninput="updateRotationField(${idx}, 'difOut', this.value)" /></td>
+          <td id="shift-min-${idx}" style="font-weight:700;">${shiftMin}</td>
+          <td id="shift-pm-${idx}" style="font-weight:700; color:${shiftPm >= 0 ? 'var(--green)' : 'var(--red)'};">${shiftPm > 0 ? '+' : ''}${shiftPm}</td>
           <td><button class="del-btn" onclick="deleteRotationRow(${idx})">×</button></td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function updateRotation(idx, field, val) {
-      gameState.rotations[idx][field] = Number(val);
-      renderRotations();
+    function updateRotationField(idx, field, rawVal) {
+      if (rawVal === '-' || rawVal === '') {
+        gameState.rotations[idx][field] = rawVal;
+      } else {
+        gameState.rotations[idx][field] = parseFloat(rawVal) || 0;
+      }
+      updateRowCalculations(idx);
       recalc();
-      saveToDrive();
+      debouncedSave();
+    }
+
+    function updateRowCalculations(idx) {
+      const r = gameState.rotations[idx];
+      const mIn = parseFloat(r.minIn) || 0;
+      const sIn = parseFloat(r.secIn) || 0;
+      const mOut = parseFloat(r.minOut) || 0;
+      const sOut = parseFloat(r.secOut) || 0;
+      const dIn = parseFloat(r.difIn) || 0;
+      const dOut = parseFloat(r.difOut) || 0;
+
+      const inSecs = mIn * 60 + sIn;
+      const outSecs = mOut * 60 + sOut;
+      const diffSecs = Math.max(0, inSecs - outSecs);
+      const shiftMin = (diffSecs / 60).toFixed(2);
+      const shiftPm = dOut - dIn;
+
+      const minEl = document.getElementById(`shift-min-${idx}`);
+      const pmEl = document.getElementById(`shift-pm-${idx}`);
+      if (minEl) minEl.textContent = shiftMin;
+      if (pmEl) {
+        pmEl.textContent = (shiftPm > 0 ? '+' : '') + shiftPm;
+        pmEl.style.color = shiftPm >= 0 ? 'var(--green)' : 'var(--red)';
+      }
     }
 
     function addRotationRow() {
       gameState.rotations.push({ minIn: 0, secIn: 0, difIn: 0, minOut: 0, secOut: 0, difOut: 0 });
       renderRotations();
-      saveToDrive();
+      debouncedSave();
     }
 
     function deleteRotationRow(idx) {
@@ -324,7 +362,7 @@
         gameState.rotations.splice(idx, 1);
         renderRotations();
         recalc();
-        saveToDrive();
+        debouncedSave();
       }
     }
 
@@ -335,10 +373,15 @@
       let totalSeconds = 0;
       let totalPm = 0;
       gameState.rotations.forEach(r => {
-        const inSecs = (Number(r.minIn) || 0) * 60 + (Number(r.secIn) || 0);
-        const outSecs = (Number(r.minOut) || 0) * 60 + (Number(r.secOut) || 0);
-        totalSeconds += Math.max(0, inSecs - outSecs);
-        totalPm += (Number(r.difOut) || 0) - (Number(r.difIn) || 0);
+        const mIn = parseFloat(r.minIn) || 0;
+        const sIn = parseFloat(r.secIn) || 0;
+        const mOut = parseFloat(r.minOut) || 0;
+        const sOut = parseFloat(r.secOut) || 0;
+        const dIn = parseFloat(r.difIn) || 0;
+        const dOut = parseFloat(r.difOut) || 0;
+
+        totalSeconds += Math.max(0, (mIn * 60 + sIn) - (mOut * 60 + sOut));
+        totalPm += (dOut - dIn);
       });
 
       const totalMin = (totalSeconds / 60).toFixed(2);
@@ -358,7 +401,7 @@
 
     function saveAndRecalc() {
       recalc();
-      saveToDrive();
+      debouncedSave();
     }
 
     function getCompiledGame() {
@@ -366,10 +409,15 @@
       let totalSeconds = 0;
       let totalPm = 0;
       gameState.rotations.forEach(r => {
-        const inSecs = (Number(r.minIn) || 0) * 60 + (Number(r.secIn) || 0);
-        const outSecs = (Number(r.minOut) || 0) * 60 + (Number(r.secOut) || 0);
-        totalSeconds += Math.max(0, inSecs - outSecs);
-        totalPm += (Number(r.difOut) || 0) - (Number(r.difIn) || 0);
+        const mIn = parseFloat(r.minIn) || 0;
+        const sIn = parseFloat(r.secIn) || 0;
+        const mOut = parseFloat(r.minOut) || 0;
+        const sOut = parseFloat(r.secOut) || 0;
+        const dIn = parseFloat(r.difIn) || 0;
+        const dOut = parseFloat(r.difOut) || 0;
+
+        totalSeconds += Math.max(0, (mIn * 60 + sIn) - (mOut * 60 + sOut));
+        totalPm += (dOut - dIn);
       });
 
       const gi = gameState.gameInfo;
