@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cayden's Game Entry & Live +/-</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-hover: #fef2f2;
+      --accent: #dc2626;
+      --accent-hover: #b91c1c;
+      --green: #16a34a;
+      --red: #dc2626;
+      --blue: #0284c7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --header-bg: #fee2e2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 16px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    h1 { font-size: 1.45rem; font-weight: 800; color: var(--accent); }
+    .badge { font-size: 0.75rem; padding: 5px 12px; border-radius: 6px; background: var(--card); border: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.82rem; transition: all 0.15s; }
+    .btn:hover { background: var(--accent-hover); }
+    .btn-outline { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .btn-danger { background: #fee2e2; color: var(--red); border: 1px solid #fca5a5; }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+
+    .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .stat-card .val { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+    .stat-card .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .panel-title { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 10px; }
+    .form-group label { display: block; font-size: 0.65rem; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; font-weight: 700; }
+    .form-group input, .form-group select {
+      width: 100%; background: #f8fafc; border: 1px solid var(--border); color: var(--text); padding: 7px 8px; border-radius: 5px; font-size: 0.82rem; outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); background: #fff; }
+
+    /* Rotation +/- Table */
+    table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; margin-top: 8px; }
+    th { background: var(--header-bg); color: #991b1b; padding: 8px; font-weight: 700; border-bottom: 1px solid #fecaca; }
+    td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+    table input { width: 90%; background: #f8fafc; border: 1px solid var(--border); color: var(--text); padding: 5px; border-radius: 4px; text-align: center; font-size: 0.8rem; outline: none; }
+    table input:focus { border-color: var(--accent); background: #fff; }
+    .del-btn { background: none; border: none; color: var(--red); font-size: 1rem; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Cayden's Game Logger</h1>
+        <p style="color: var(--muted); font-size: 0.8rem; margin-top: 2px;">Single Game Tracker • Rotations & Plus/Minus</p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span class="badge" id="sync-status">Connecting...</span>
+        <button class="btn btn-danger" onclick="resetForNextGame()">🗑️ Reset For Next Game</button>
+      </div>
+    </header>
+
+    <!-- Calculated Game Stat Bar -->
+    <div class="summary-bar">
+      <div class="stat-card"><div class="label">Calculated Min</div><div class="val" id="disp-min">0.0</div></div>
+      <div class="stat-card"><div class="label">Calculated +/-</div><div class="val" id="disp-pm">0</div></div>
+      <div class="stat-card"><div class="label">True Shots</div><div class="val" id="disp-ts" style="color:var(--accent)">0</div></div>
+      <div class="stat-card"><div class="label">FG%</div><div class="val" id="disp-fg">0.0%</div></div>
+      <div class="stat-card"><div class="label">2PT%</div><div class="val" id="disp-2p">0.0%</div></div>
+      <div class="stat-card"><div class="label">3PT%</div><div class="val" id="disp-3p">0.0%</div></div>
+      <div class="stat-card"><div class="label">FT%</div><div class="val" id="disp-ft" style="color:var(--green)">0.0%</div></div>
+    </div>
+
+    <!-- Game Information -->
+    <div class="panel">
+      <div class="panel-title">Game Information</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Date</label><input type="date" id="g-date" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Opponent</label><input type="text" id="g-opp" placeholder="Opponent Name" oninput="saveAndRecalc()" /></div>
+        <div class="form-group">
+          <label>Result</label>
+          <select id="g-res" onchange="saveAndRecalc()">
+            <option value="W">W</option>
+            <option value="L">L</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Score</label><input type="text" id="g-score" placeholder="e.g. 55-48" oninput="saveAndRecalc()" /></div>
+      </div>
+    </div>
+
+    <!-- Box Score Stats -->
+    <div class="panel">
+      <div class="panel-title">Box Score Stats</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Points (PTS)</label><input type="number" id="g-pts" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Rebounds (RB)</label><input type="number" id="g-reb" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Assists (AST)</label><input type="number" id="g-ast" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Steals (STLS)</label><input type="number" id="g-stls" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Forced TO (FTO)</label><input type="number" id="g-fto" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Fouls (PF)</label><input type="number" id="g-fouls" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Drawn Fouls</label><input type="number" id="g-drnfls" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>Shooting Fouls Drawn (SAA)</label><input type="number" id="g-saa" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>SAM</label><input type="number" id="g-sam" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>2PT Made (2M)</label><input type="number" id="g-2pm" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>2PT Att (2A)</label><input type="number" id="g-2pa" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>3PT Made (3M)</label><input type="number" id="g-3pm" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>3PT Att (3A)</label><input type="number" id="g-3pa" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>FT Made (FTM)</label><input type="number" id="g-ftm" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label>FT Att (FTA)</label><input type="number" id="g-fta" placeholder="0" oninput="saveAndRecalc()" /></div>
+      </div>
+    </div>
+
+    <!-- Rotations & Plus/Minus (Spreadsheet Matrix) -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>Rotation Shifts & Plus/Minus Tracker</span>
+        <button class="btn btn-outline" onclick="addRotationRow()">+ Add Shift</button>
+      </div>
+      <p style="font-size: 0.72rem; color: var(--muted); margin-bottom: 8px;">
+        Enter game clock and score differential when entering and exiting:
+      </p>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Min In</th>
+              <th>Sec In</th>
+              <th>Dif In</th>
+              <th>Min Out</th>
+              <th>Sec Out</th>
+              <th>Dif Out</th>
+              <th>Shift Min</th>
+              <th>Shift +/-</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="rot-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sharing Actions -->
+    <div class="btn-group" style="margin-bottom: 24px;">
+      <button class="btn" onclick="copyFormattedSummary()">📋 Copy Formatted Summary</button>
+      <button class="btn btn-outline" onclick="copyJsonSnippet()">📋 Copy JSON Snippet for Box Score App</button>
+      <button class="btn btn-outline" onclick="saveToDriveManually()">💾 Force Sync to Drive</button>
+    </div>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwP77daoD87t3TinnNo5-7U7wxF2J8ZPAXRgTCsRbiUlgJuWII6xDutrFjOUJ9z4xV/exec";
+
+    let gameState = {
+      gameInfo: { date: "", opponent: "", result: "W", score: "" },
+      stats: { pts: 0, reb: 0, ast: 0, stls: 0, fto: 0, fouls: 0, drnFls: 0, saa: 0, sam: 0, twoPm: 0, twoPa: 0, threePm: 0, threePa: 0, ftm: 0, fta: 0 },
+      rotations: [
+        { minIn: 20, secIn: 0, difIn: 0, minOut: 0, secOut: 0, difOut: 0 }
+      ]
+    };
+
+    async function loadData() {
+      setStatus("Syncing with Drive...");
+      try {
+        const res = await fetch(GOOGLE_SCRIPT_URL);
+        const data = await res.json();
+        if (data && (data.gameInfo || data.stats || data.rotations)) {
+          gameState = {
+            gameInfo: Object.assign({}, gameState.gameInfo, data.gameInfo),
+            stats: Object.assign({}, gameState.stats, data.stats),
+            rotations: data.rotations && data.rotations.length > 0 ? data.rotations : gameState.rotations
+          };
+          localStorage.setItem('cayden_active_game_cache', JSON.stringify(gameState));
+          setStatus("Synced with Drive");
+        } else {
+          fallbackLocal("Synced with Drive");
+        }
+      } catch (err) {
+        fallbackLocal("Offline Mode");
+      }
+      populateForm();
+      recalc();
+    }
+
+    function fallbackLocal(msg) {
+      const local = localStorage.getItem('cayden_active_game_cache');
+      if (local) {
+        try { gameState = JSON.parse(local); } catch(e){}
+      }
+      setStatus(msg);
+    }
+
+    async function saveToDrive() {
+      localStorage.setItem('cayden_active_game_cache', JSON.stringify(gameState));
+      setStatus("Saving...");
+      try {
+        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes("http")) {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(gameState)
+          });
+          setStatus("Synced with Drive");
+        } else {
+          setStatus("Local Saved");
+        }
+      } catch (err) {
+        setStatus("Offline Mode");
+      }
+    }
+
+    function saveToDriveManually() {
+      pullFromForm();
+      saveToDrive();
+      alert("Active game saved to Google Drive!");
+    }
+
+    function setStatus(msg) {
+      document.getElementById('sync-status').textContent = msg;
+    }
+
+    function populateForm() {
+      const gi = gameState.gameInfo || {};
+      const st = gameState.stats || {};
+      document.getElementById('g-date').value = gi.date || "";
+      document.getElementById('g-opp').value = gi.opponent || "";
+      document.getElementById('g-res').value = gi.result || "W";
+      document.getElementById('g-score').value = gi.score || "";
+
+      document.getElementById('g-pts').value = st.pts || "";
+      document.getElementById('g-reb').value = st.reb || "";
+      document.getElementById('g-ast').value = st.ast || "";
+      document.getElementById('g-stls').value = st.stls || "";
+      document.getElementById('g-fto').value = st.fto || "";
+      document.getElementById('g-fouls').value = st.fouls || "";
+      document.getElementById('g-drnfls').value = st.drnFls || "";
+      document.getElementById('g-saa').value = st.saa || "";
+      document.getElementById('g-sam').value = st.sam || "";
+      document.getElementById('g-2pm').value = st.twoPm || "";
+      document.getElementById('g-2pa').value = st.twoPa || "";
+      document.getElementById('g-3pm').value = st.threePm || "";
+      document.getElementById('g-3pa').value = st.threePa || "";
+      document.getElementById('g-ftm').value = st.ftm || "";
+      document.getElementById('g-fta').value = st.fta || "";
+
+      renderRotations();
+    }
+
+    function pullFromForm() {
+      gameState.gameInfo = {
+        date: document.getElementById('g-date').value,
+        opponent: document.getElementById('g-opp').value,
+        result: document.getElementById('g-res').value,
+        score: document.getElementById('g-score').value
+      };
+      gameState.stats = {
+        pts: Number(document.getElementById('g-pts').value) || 0,
+        reb: Number(document.getElementById('g-reb').value) || 0,
+        ast: Number(document.getElementById('g-ast').value) || 0,
+        stls: Number(document.getElementById('g-stls').value) || 0,
+        fto: Number(document.getElementById('g-fto').value) || 0,
+        fouls: Number(document.getElementById('g-fouls').value) || 0,
+        drnFls: Number(document.getElementById('g-drnfls').value) || 0,
+        saa: Number(document.getElementById('g-saa').value) || 0,
+        sam: Number(document.getElementById('g-sam').value) || 0,
+        twoPm: Number(document.getElementById('g-2pm').value) || 0,
+        twoPa: Number(document.getElementById('g-2pa').value) || 0,
+        threePm: Number(document.getElementById('g-3pm').value) || 0,
+        threePa: Number(document.getElementById('g-3pa').value) || 0,
+        ftm: Number(document.getElementById('g-ftm').value) || 0,
+        fta: Number(document.getElementById('g-fta').value) || 0
+      };
+    }
+
+    function renderRotations() {
+      const tbody = document.getElementById('rot-body');
+      tbody.innerHTML = '';
+      gameState.rotations.forEach((r, idx) => {
+        const inSecs = (Number(r.minIn) || 0) * 60 + (Number(r.secIn) || 0);
+        const outSecs = (Number(r.minOut) || 0) * 60 + (Number(r.secOut) || 0);
+        const diffSecs = Math.max(0, inSecs - outSecs);
+        const shiftMin = (diffSecs / 60).toFixed(2);
+        const shiftPm = (Number(r.difOut) || 0) - (Number(r.difIn) || 0);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="number" step="1" value="${r.minIn !== undefined ? r.minIn : ''}" oninput="updateRotation(${idx}, 'minIn', this.value)" /></td>
+          <td><input type="number" step="1" value="${r.secIn !== undefined ? r.secIn : ''}" oninput="updateRotation(${idx}, 'secIn', this.value)" /></td>
+          <td><input type="number" step="1" value="${r.difIn !== undefined ? r.difIn : ''}" oninput="updateRotation(${idx}, 'difIn', this.value)" /></td>
+          <td><input type="number" step="1" value="${r.minOut !== undefined ? r.minOut : ''}" oninput="updateRotation(${idx}, 'minOut', this.value)" /></td>
+          <td><input type="number" step="1" value="${r.secOut !== undefined ? r.secOut : ''}" oninput="updateRotation(${idx}, 'secOut', this.value)" /></td>
+          <td><input type="number" step="1" value="${r.difOut !== undefined ? r.difOut : ''}" oninput="updateRotation(${idx}, 'difOut', this.value)" /></td>
+          <td style="font-weight:700;">${shiftMin}</td>
+          <td style="font-weight:700; color:${shiftPm >= 0 ? 'var(--green)' : 'var(--red)'};">${shiftPm > 0 ? '+' : ''}${shiftPm}</td>
+          <td><button class="del-btn" onclick="deleteRotationRow(${idx})">×</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateRotation(idx, field, val) {
+      gameState.rotations[idx][field] = Number(val);
+      renderRotations();
+      recalc();
+      saveToDrive();
+    }
+
+    function addRotationRow() {
+      gameState.rotations.push({ minIn: 0, secIn: 0, difIn: 0, minOut: 0, secOut: 0, difOut: 0 });
+      renderRotations();
+      saveToDrive();
+    }
+
+    function deleteRotationRow(idx) {
+      if (gameState.rotations.length > 1) {
+        gameState.rotations.splice(idx, 1);
+        renderRotations();
+        recalc();
+        saveToDrive();
+      }
+    }
+
+    function recalc() {
+      pullFromForm();
+      const st = gameState.stats;
+
+      let totalSeconds = 0;
+      let totalPm = 0;
+      gameState.rotations.forEach(r => {
+        const inSecs = (Number(r.minIn) || 0) * 60 + (Number(r.secIn) || 0);
+        const outSecs = (Number(r.minOut) || 0) * 60 + (Number(r.secOut) || 0);
+        totalSeconds += Math.max(0, inSecs - outSecs);
+        totalPm += (Number(r.difOut) || 0) - (Number(r.difIn) || 0);
+      });
+
+      const totalMin = (totalSeconds / 60).toFixed(2);
+      document.getElementById('disp-min').textContent = totalMin;
+      document.getElementById('disp-pm').textContent = (totalPm > 0 ? '+' : '') + totalPm;
+      document.getElementById('disp-pm').style.color = totalPm >= 0 ? 'var(--green)' : 'var(--red)';
+
+      const trueShots = st.twoPa + st.threePa + st.saa;
+      document.getElementById('disp-ts').textContent = trueShots;
+
+      const fga = st.twoPa + st.threePa;
+      const fgm = st.twoPm + st.threePm;
+      document.getElementById('disp-fg').textContent = fga > 0 ? ((fgm / fga) * 100).toFixed(1) + '%' : '0.0%';
+      document.getElementById('disp-2p').textContent = st.twoPa > 0 ? ((st.twoPm / st.twoPa) * 100).toFixed(1) + '%' : '0.0%';
+      document.getElementById('disp-3p').textContent = st.threePa > 0 ? ((st.threePm / st.threePa) * 100).toFixed(1) + '%' : '0.0%';
+      document.getElementById('disp-ft').textContent = st.fta > 0 ? ((st.ftm / st.fta) * 100).toFixed(1) + '%' : '0.0%';
+    }
+
+    function saveAndRecalc() {
+      recalc();
+      saveToDrive();
+    }
+
+    function getCompiledGame() {
+      pullFromForm();
+      let totalSeconds = 0;
+      let totalPm = 0;
+      gameState.rotations.forEach(r => {
+        const inSecs = (Number(r.minIn) || 0) * 60 + (Number(r.secIn) || 0);
+        const outSecs = (Number(r.minOut) || 0) * 60 + (Number(r.secOut) || 0);
+        totalSeconds += Math.max(0, inSecs - outSecs);
+        totalPm += (Number(r.difOut) || 0) - (Number(r.difIn) || 0);
+      });
+
+      const gi = gameState.gameInfo;
+      const st = gameState.stats;
+      const trueShots = st.twoPa + st.threePa + st.saa;
+      const pmStr = totalPm > 0 ? `+${totalPm}` : `${totalPm}`;
+
+      return {
+        date: gi.date || new Date().toISOString().split('T')[0],
+        opponent: gi.opponent || "Opponent",
+        result: gi.result || "W",
+        score: gi.score || "-",
+        min: parseFloat((totalSeconds / 60).toFixed(2)),
+        pts: st.pts,
+        reb: st.reb,
+        ast: st.ast,
+        stls: st.stls,
+        fto: st.fto,
+        fouls: st.fouls,
+        drnFls: st.drnFls,
+        saa: st.saa,
+        sam: st.sam,
+        twoPm: st.twoPm,
+        twoPa: st.twoPa,
+        threePm: st.threePm,
+        threePa: st.threePa,
+        ftm: st.ftm,
+        fta: st.fta,
+        shootingFoulsDrawn: st.saa,
+        trueShots: trueShots,
+        plusMinus: pmStr
+      };
+    }
+
+    function copyFormattedSummary() {
+      const g = getCompiledGame();
+      const text = `🏀 Cayden's Game Summary
+Opponent: ${g.opponent} (${g.result} ${g.score})
+Date: ${g.date} | MIN: ${g.min} | +/-: ${g.plusMinus}
+PTS: ${g.pts} | REB: ${g.reb} | AST: ${g.ast} | STL: ${g.stls} | FTO: ${g.fto}
+Shooting: 2PT ${g.twoPm}/${g.twoPa} | 3PT ${g.threePm}/${g.threePa} | FT ${g.ftm}/${g.fta}
+Fouls: ${g.fouls} | Drawn Fouls: ${g.drnFls} | True Shots: ${g.trueShots} (Goal: 8)`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Formatted summary copied to clipboard! Ready to paste into chat.");
+      });
+    }
+
+    function copyJsonSnippet() {
+      const g = getCompiledGame();
+      const snippet = JSON.stringify(g, null, 2);
+      navigator.clipboard.writeText(snippet).then(() => {
+        alert("JSON snippet copied! You can paste this directly into your master Box Score app import box.");
+      });
+    }
+
+    function resetForNextGame() {
+      if (confirm("Reset all fields for the next game? (Make sure you've shared or copied your current stats first!)")) {
+        gameState = {
+          gameInfo: { date: "", opponent: "", result: "W", score: "" },
+          stats: { pts: 0, reb: 0, ast: 0, stls: 0, fto: 0, fouls: 0, drnFls: 0, saa: 0, sam: 0, twoPm: 0, twoPa: 0, threePm: 0, threePa: 0, ftm: 0, fta: 0 },
+          rotations: [
+            { minIn: 20, secIn: 0, difIn: 0, minOut: 0, secOut: 0, difOut: 0 }
+          ]
+        };
+        populateForm();
+        recalc();
+        saveToDrive();
+        alert("App is clean and ready for the next game!");
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
