@@ -110,8 +110,7 @@
         <div class="form-group"><label>Forced TO (FTO)</label><input type="number" id="g-fto" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Fouls (PF)</label><input type="number" id="g-fouls" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Drawn Fouls</label><input type="number" id="g-drnfls" placeholder="0" oninput="saveAndRecalc()" /></div>
-        <div class="form-group"><label>Shooting Fouls Drawn (SAA)</label><input type="number" id="g-saa" placeholder="0" oninput="saveAndRecalc()" /></div>
-        <div class="form-group"><label>SAM</label><input type="number" id="g-sam" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label style="color:var(--accent);">True Shots</label><input type="number" id="g-ts" placeholder="0" style="border-color:var(--accent);" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>2PT Made (2M)</label><input type="number" id="g-2pm" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>2PT Att (2A)</label><input type="number" id="g-2pa" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>3PT Made (3M)</label><input type="number" id="g-3pm" placeholder="0" oninput="saveAndRecalc()" /></div>
@@ -121,7 +120,7 @@
       </div>
     </div>
 
-    <!-- Rotations & Plus/Minus (Spreadsheet Matrix) -->
+    <!-- Rotations & Plus/Minus -->
     <div class="panel">
       <div class="panel-title">
         <span>Rotation Shifts & Plus/Minus Tracker</span>
@@ -163,7 +162,7 @@
 
     let gameState = {
       gameInfo: { date: "", opponent: "", result: "W", score: "" },
-      stats: { pts: 0, reb: 0, ast: 0, stls: 0, fto: 0, fouls: 0, drnFls: 0, saa: 0, sam: 0, twoPm: 0, twoPa: 0, threePm: 0, threePa: 0, ftm: 0, fta: 0 },
+      stats: { pts: 0, reb: 0, ast: 0, stls: 0, fto: 0, fouls: 0, drnFls: 0, trueShots: 0, twoPm: 0, twoPa: 0, threePm: 0, threePa: 0, ftm: 0, fta: 0 },
       rotations: [
         { minIn: 20, secIn: 0, difIn: 0, minOut: 0, secOut: 0, difOut: 0 }
       ]
@@ -245,8 +244,7 @@
       document.getElementById('g-fto').value = st.fto || "";
       document.getElementById('g-fouls').value = st.fouls || "";
       document.getElementById('g-drnfls').value = st.drnFls || "";
-      document.getElementById('g-saa').value = st.saa || "";
-      document.getElementById('g-sam').value = st.sam || "";
+      document.getElementById('g-ts').value = st.trueShots || "";
       document.getElementById('g-2pm').value = st.twoPm || "";
       document.getElementById('g-2pa').value = st.twoPa || "";
       document.getElementById('g-3pm').value = st.threePm || "";
@@ -272,8 +270,7 @@
         fto: Number(document.getElementById('g-fto').value) || 0,
         fouls: Number(document.getElementById('g-fouls').value) || 0,
         drnFls: Number(document.getElementById('g-drnfls').value) || 0,
-        saa: Number(document.getElementById('g-saa').value) || 0,
-        sam: Number(document.getElementById('g-sam').value) || 0,
+        trueShots: Number(document.getElementById('g-ts').value) || 0,
         twoPm: Number(document.getElementById('g-2pm').value) || 0,
         twoPa: Number(document.getElementById('g-2pa').value) || 0,
         threePm: Number(document.getElementById('g-3pm').value) || 0,
@@ -349,8 +346,7 @@
       document.getElementById('disp-pm').textContent = (totalPm > 0 ? '+' : '') + totalPm;
       document.getElementById('disp-pm').style.color = totalPm >= 0 ? 'var(--green)' : 'var(--red)';
 
-      const trueShots = st.twoPa + st.threePa + st.saa;
-      document.getElementById('disp-ts').textContent = trueShots;
+      document.getElementById('disp-ts').textContent = st.trueShots;
 
       const fga = st.twoPa + st.threePa;
       const fgm = st.twoPm + st.threePm;
@@ -378,7 +374,6 @@
 
       const gi = gameState.gameInfo;
       const st = gameState.stats;
-      const trueShots = st.twoPa + st.threePa + st.saa;
       const pmStr = totalPm > 0 ? `+${totalPm}` : `${totalPm}`;
 
       return {
@@ -394,16 +389,13 @@
         fto: st.fto,
         fouls: st.fouls,
         drnFls: st.drnFls,
-        saa: st.saa,
-        sam: st.sam,
         twoPm: st.twoPm,
         twoPa: st.twoPa,
         threePm: st.threePm,
         threePa: st.threePa,
         ftm: st.ftm,
         fta: st.fta,
-        shootingFoulsDrawn: st.saa,
-        trueShots: trueShots,
+        trueShots: st.trueShots,
         plusMinus: pmStr
       };
     }
@@ -415,7 +407,7 @@ Opponent: ${g.opponent} (${g.result} ${g.score})
 Date: ${g.date} | MIN: ${g.min} | +/-: ${g.plusMinus}
 PTS: ${g.pts} | REB: ${g.reb} | AST: ${g.ast} | STL: ${g.stls} | FTO: ${g.fto}
 Shooting: 2PT ${g.twoPm}/${g.twoPa} | 3PT ${g.threePm}/${g.threePa} | FT ${g.ftm}/${g.fta}
-Fouls: ${g.fouls} | Drawn Fouls: ${g.drnFls} | True Shots: ${g.trueShots} (Goal: 8)`;
+Fouls: ${g.fouls} | Drawn Fouls: ${g.drnFls} | True Shots: ${g.trueShots}`;
 
       navigator.clipboard.writeText(text).then(() => {
         alert("Formatted summary copied to clipboard! Ready to paste into chat.");
@@ -434,7 +426,7 @@ Fouls: ${g.fouls} | Drawn Fouls: ${g.drnFls} | True Shots: ${g.trueShots} (Goal:
       if (confirm("Reset all fields for the next game? (Make sure you've shared or copied your current stats first!)")) {
         gameState = {
           gameInfo: { date: "", opponent: "", result: "W", score: "" },
-          stats: { pts: 0, reb: 0, ast: 0, stls: 0, fto: 0, fouls: 0, drnFls: 0, saa: 0, sam: 0, twoPm: 0, twoPa: 0, threePm: 0, threePa: 0, ftm: 0, fta: 0 },
+          stats: { pts: 0, reb: 0, ast: 0, stls: 0, fto: 0, fouls: 0, drnFls: 0, trueShots: 0, twoPm: 0, twoPa: 0, threePm: 0, threePa: 0, ftm: 0, fta: 0 },
           rotations: [
             { minIn: 20, secIn: 0, difIn: 0, minOut: 0, secOut: 0, difOut: 0 }
           ]
