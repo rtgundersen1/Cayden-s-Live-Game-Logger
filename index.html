@@ -48,6 +48,7 @@
       width: 100%; background: #f8fafc; border: 1px solid var(--border); color: var(--text); padding: 7px 8px; border-radius: 5px; font-size: 0.82rem; outline: none;
     }
     .form-group input:focus, .form-group select:focus { border-color: var(--accent); background: #fff; }
+    .form-group input.readonly-box { background: #fee2e2; border-color: #fca5a5; font-weight: 800; color: var(--accent); cursor: not-allowed; }
 
     /* Rotation +/- Table */
     table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; margin-top: 8px; }
@@ -75,7 +76,8 @@
     <div class="summary-bar">
       <div class="stat-card"><div class="label">Calculated Min</div><div class="val" id="disp-min">0.0</div></div>
       <div class="stat-card"><div class="label">Calculated +/-</div><div class="val" id="disp-pm">0</div></div>
-      <div class="stat-card"><div class="label">True Shots</div><div class="val" id="disp-ts" style="color:var(--accent)">0</div></div>
+      <div class="stat-card"><div class="label">Total Points</div><div class="val" id="disp-pts" style="color:var(--accent)">0</div></div>
+      <div class="stat-card"><div class="label">True Shots</div><div class="val" id="disp-ts" style="color:var(--blue)">0</div></div>
       <div class="stat-card"><div class="label">FG%</div><div class="val" id="disp-fg">0.0%</div></div>
       <div class="stat-card"><div class="label">2PT%</div><div class="val" id="disp-2p">0.0%</div></div>
       <div class="stat-card"><div class="label">3PT%</div><div class="val" id="disp-3p">0.0%</div></div>
@@ -103,14 +105,14 @@
     <div class="panel">
       <div class="panel-title">Box Score Stats</div>
       <div class="form-grid">
-        <div class="form-group"><label>Points (PTS)</label><input type="number" id="g-pts" placeholder="0" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label style="color:var(--accent);">Points (Auto)</label><input type="number" id="g-pts" class="readonly-box" placeholder="0" readonly /></div>
         <div class="form-group"><label>Rebounds (RB)</label><input type="number" id="g-reb" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Assists (AST)</label><input type="number" id="g-ast" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Steals (STLS)</label><input type="number" id="g-stls" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Forced TO (FTO)</label><input type="number" id="g-fto" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Fouls (PF)</label><input type="number" id="g-fouls" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>Drawn Fouls</label><input type="number" id="g-drnfls" placeholder="0" oninput="saveAndRecalc()" /></div>
-        <div class="form-group"><label style="color:var(--accent);">True Shots</label><input type="number" id="g-ts" placeholder="0" style="border-color:var(--accent);" oninput="saveAndRecalc()" /></div>
+        <div class="form-group"><label style="color:var(--blue);">True Shots</label><input type="number" id="g-ts" placeholder="0" style="border-color:var(--blue);" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>2PT Made (2M)</label><input type="number" id="g-2pm" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>2PT Att (2A)</label><input type="number" id="g-2pa" placeholder="0" oninput="saveAndRecalc()" /></div>
         <div class="form-group"><label>3PT Made (3M)</label><input type="number" id="g-3pm" placeholder="0" oninput="saveAndRecalc()" /></div>
@@ -246,7 +248,6 @@
       document.getElementById('g-res').value = gi.result || "W";
       document.getElementById('g-score').value = gi.score || "";
 
-      document.getElementById('g-pts').value = st.pts !== undefined && st.pts !== 0 ? st.pts : (st.pts === 0 ? 0 : "");
       document.getElementById('g-reb').value = st.reb !== undefined && st.reb !== 0 ? st.reb : (st.reb === 0 ? 0 : "");
       document.getElementById('g-ast').value = st.ast !== undefined && st.ast !== 0 ? st.ast : (st.ast === 0 ? 0 : "");
       document.getElementById('g-stls').value = st.stls !== undefined && st.stls !== 0 ? st.stls : (st.stls === 0 ? 0 : "");
@@ -265,6 +266,13 @@
     }
 
     function pullFromForm() {
+      const twoPm = Number(document.getElementById('g-2pm').value) || 0;
+      const threePm = Number(document.getElementById('g-3pm').value) || 0;
+      const ftm = Number(document.getElementById('g-ftm').value) || 0;
+      const calculatedPoints = (2 * twoPm) + (3 * threePm) + ftm;
+
+      document.getElementById('g-pts').value = calculatedPoints;
+
       gameState.gameInfo = {
         date: document.getElementById('g-date').value,
         opponent: document.getElementById('g-opp').value,
@@ -272,7 +280,7 @@
         score: document.getElementById('g-score').value
       };
       gameState.stats = {
-        pts: Number(document.getElementById('g-pts').value) || 0,
+        pts: calculatedPoints,
         reb: Number(document.getElementById('g-reb').value) || 0,
         ast: Number(document.getElementById('g-ast').value) || 0,
         stls: Number(document.getElementById('g-stls').value) || 0,
@@ -280,11 +288,11 @@
         fouls: Number(document.getElementById('g-fouls').value) || 0,
         drnFls: Number(document.getElementById('g-drnfls').value) || 0,
         trueShots: Number(document.getElementById('g-ts').value) || 0,
-        twoPm: Number(document.getElementById('g-2pm').value) || 0,
+        twoPm: twoPm,
         twoPa: Number(document.getElementById('g-2pa').value) || 0,
-        threePm: Number(document.getElementById('g-3pm').value) || 0,
+        threePm: threePm,
         threePa: Number(document.getElementById('g-3pa').value) || 0,
-        ftm: Number(document.getElementById('g-ftm').value) || 0,
+        ftm: ftm,
         fta: Number(document.getElementById('g-fta').value) || 0
       };
     }
@@ -388,7 +396,7 @@
       document.getElementById('disp-min').textContent = totalMin;
       document.getElementById('disp-pm').textContent = (totalPm > 0 ? '+' : '') + totalPm;
       document.getElementById('disp-pm').style.color = totalPm >= 0 ? 'var(--green)' : 'var(--red)';
-
+      document.getElementById('disp-pts').textContent = st.pts;
       document.getElementById('disp-ts').textContent = st.trueShots;
 
       const fga = st.twoPa + st.threePa;
@@ -490,3 +498,4 @@ Fouls: ${g.fouls} | Drawn Fouls: ${g.drnFls} | True Shots: ${g.trueShots}`;
   </script>
 </body>
 </html>
+
